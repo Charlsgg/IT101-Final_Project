@@ -1,11 +1,27 @@
 <script setup>
 import { ref, reactive, computed, provide } from 'vue';
-import { RouterView } from 'vue-router';
+import { RouterView, useRouter } from 'vue-router';
 import NavBar from './components/NavBar.vue';
 import AppFooter from './components/AppFooter.vue';
 
+const router = useRouter();
+
 const cart = reactive([]);
 const isAnimatingCart = ref(false);
+
+const isLoggedIn = ref(localStorage.getItem('isLoggedIn') === 'true');
+
+const login = () => {
+  isLoggedIn.value = true;
+  localStorage.setItem('isLoggedIn', 'true'); 
+  router.push('/'); 
+};
+
+const logout = () => {
+  isLoggedIn.value = false;
+  localStorage.removeItem('isLoggedIn'); 
+  router.push('/login');
+};
 
 const products = reactive([
   { id: 1, name: "Nike Air Zoom Pegasus", price: 6995, category: "Running", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=500&q=80" },
@@ -47,6 +63,8 @@ provide('cart', cart);
 provide('addToCart', addToCart);
 provide('removeFromCart', removeFromCart);
 provide('clearCart', clearCart);
+provide('login', login);
+provide('logout', logout);
 
 const cartCount = computed(() => cart.length);
 </script>
@@ -54,13 +72,13 @@ const cartCount = computed(() => cart.length);
 <template>
   <div class="min-h-screen flex flex-col font-sans bg-bg text-text-main leading-relaxed">
     
-    <NavBar :cartCount="cartCount" :isAnimating="isAnimatingCart" />
+    <NavBar v-if="isLoggedIn" :cartCount="cartCount" :isAnimating="isAnimatingCart" />
 
-    <main class="flex-1 pt-[80px] w-full">
+    <main class="flex-1 w-full" :class="{ 'pt-[80px]': isLoggedIn }">
       <RouterView />
     </main>
 
-    <AppFooter />
+    <AppFooter v-if="isLoggedIn" />
     
   </div>
 </template>
