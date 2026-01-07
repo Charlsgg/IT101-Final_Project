@@ -33,17 +33,17 @@ const goBack = () => {
         Back to Browse
       </button>
       
-      <div class="grid grid-cols-1 md:grid-cols-[1.5fr_1fr] gap-12 md:gap-16">
+      <div class="grid grid-cols-1 md:grid-cols-[1.5fr_1fr] gap-12 md:gap-16 items-start">
         
         <div>
           <img 
             :src="product.image" 
-            class="w-full h-auto rounded-2xl shadow-xl object-cover" 
+            class="w-full h-auto max-h-[600px] rounded-2xl shadow-xl object-cover object-center" 
             :alt="product.name"
           >
         </div>
         
-        <div class="flex flex-col justify-center">
+        <div class="flex flex-col justify-center top-0">
           <span class="w-fit bg-primary text-white px-3 py-1 rounded-full text-xs font-bold mb-4 tracking-wide uppercase">
             Best Seller
           </span>
