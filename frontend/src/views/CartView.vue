@@ -1,101 +1,72 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, inject } from 'vue';
+import { useRouter } from 'vue-router';
 
-const props = defineProps({
-  cart: Array
-});
+const router = useRouter();
 
-// [UPDATED] Added 'remove-item' to the list of events we can send
-const emit = defineEmits(['navigate', 'checkout', 'remove-item']);
+const cart = inject('cart');
+const removeFromCart = inject('removeFromCart');
 
-const cartTotal = computed(() => props.cart.reduce((total, item) => total + item.price, 0));
+const cartTotal = computed(() => cart.reduce((total, item) => total + item.price, 0));
+
+const goToCheckout = () => {
+  router.push('/checkout');
+};
 </script>
 
 <template>
-  <section class="page-section cart-view">
-    <h2>Your Bag <span style="color:#94a3b8">({{ cart.length }})</span></h2>
+  <section class="max-w-7xl mx-auto p-8 animate-[fadeIn_0.3s_ease]">
     
-    <div v-if="cart.length === 0" class="empty-state">
-      <p>Your bag is empty.</p>
-      <button class="btn-secondary" @click="$emit('navigate', 'products')">View Products</button>
+    <h2 class="text-2xl font-black mb-6">Your Bag <span class="text-gray-400 font-normal">({{ cart.length }})</span></h2>
+    
+    <div v-if="cart.length === 0" class="text-center py-20 text-text-muted">
+      <p class="mb-6 text-lg">Your bag is empty.</p>
+      <button class="btn-secondary" @click="router.push('/products')">View Products</button>
     </div>
     
-    <div v-else class="cart-container">
-      <div class="cart-list">
-        <div v-for="(item, index) in cart" :key="index" class="cart-row">
-          <img :src="item.image" class="thumb">
+    <div v-else class="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-8 mt-8">
+      
+      <div class="flex flex-col">
+        <div v-for="(item, index) in cart" :key="index" class="flex items-center gap-4 bg-surface p-4 mb-4 rounded-lg shadow-sm border border-transparent hover:border-border transition-colors">
+          <img :src="item.image" class="w-20 h-20 object-cover rounded-md">
           
-          <div class="row-info">
-            <h4>{{ item.name }}</h4>
-            <span class="row-price">${{ item.price }}</span>
+          <div class="flex-1">
+            <h4 class="font-bold text-primary">{{ item.name }}</h4>
+            <span class="font-medium text-text-muted">₱{{ item.price.toLocaleString() }}</span>
           </div>
 
-          <button class="remove-btn" @click="$emit('remove-item', index)" title="Remove item">
+          <button 
+            class="w-8 h-8 rounded-full bg-red-100 text-red-500 text-xl leading-none flex items-center justify-center pb-1 transition-all duration-200 hover:bg-red-500 hover:text-white hover:scale-110" 
+            @click="removeFromCart(index)" 
+            title="Remove item"
+          >
             &minus;
           </button>
         </div>
       </div>
       
-      <div class="cart-summary">
-        <h3>Summary</h3>
-        <div class="sum-row"><span>Subtotal</span> <span>${{ cartTotal }}</span></div>
-        <div class="sum-row"><span>Tax</span> <span>$0.00</span></div>
-        <hr>
-        <div class="sum-row total"><span>Total</span> <span>${{ cartTotal }}</span></div>
-        <button class="btn-primary full" @click="$emit('checkout')">Member Checkout</button>
+      <div class="bg-surface p-8 rounded-2xl h-fit shadow-sm border border-border">
+        <h3 class="text-xl font-bold mb-6">Summary</h3>
+        
+        <div class="flex justify-between mb-3 text-text-muted font-medium">
+          <span>Subtotal</span> 
+          <span>₱{{ cartTotal.toLocaleString() }}</span>
+        </div>
+        
+        <div class="flex justify-between mb-3 text-text-muted font-medium">
+          <span>Tax</span> 
+          <span>₱0.00</span>
+        </div>
+        
+        <hr class="border-border my-6">
+        
+        <div class="flex justify-between font-extrabold text-primary text-xl mb-6">
+          <span>Total</span> 
+          <span>₱{{ cartTotal.toLocaleString() }}</span>
+        </div>
+        
+        <button class="btn-primary full" @click="goToCheckout">Member Checkout</button>
       </div>
     </div>
   </section>
 </template>
-
-<style scoped>
-.page-section { max-width: 1200px; margin: 0 auto; padding: 2rem; animation: fadeIn 0.3s ease; }
-.cart-container { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-top: 2rem; }
-
-/* Row Styling */
-.cart-row { 
-  display: flex; 
-  align-items: center; 
-  gap: 1rem; 
-  background: white; 
-  padding: 1rem; 
-  margin-bottom: 1rem; 
-  border-radius: 8px; 
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Slight shadow for depth */
-}
-
-.thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; }
-.row-info { flex: 1; /* Pushes the button to the far right */ }
-
-/* [NEW] Remove Button Styling */
-.remove-btn {
-  background: #fee2e2;
-  color: #ef4444;
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%; /* Circle shape */
-  font-size: 1.5rem;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  padding-bottom: 4px; /* Visual alignment adjustment */
-}
-.remove-btn:hover {
-  background: #ef4444;
-  color: white;
-  transform: scale(1.1);
-}
-
-.cart-summary { background: white; padding: 2rem; border-radius: 12px; height: fit-content; }
-.sum-row { display: flex; justify-content: space-between; margin-bottom: 0.75rem; color: var(--text-muted); }
-.total { font-weight: 800; color: var(--primary); font-size: 1.2rem; margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem; }
-.empty-state { text-align: center; padding: 4rem; color: var(--text-muted); }
-
-@media (max-width: 768px) {
-  .cart-container { grid-template-columns: 1fr; }
-}
-</style>

@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  /* Recreating your .btn-primary using Tailwind utilities */
+  .btn-primary {
+    @apply bg-primary text-white py-3 px-6 rounded-full font-semibold border-none cursor-pointer transition-transform duration-200 ease-in-out;
+  }
+  
+  .btn-primary:hover {
+    @apply scale-105 opacity-90;
+  }
+
+  .btn-secondary {
+    @apply bg-surface border border-border py-3 px-6 rounded-full font-semibold cursor-pointer transition-colors;
+  }
+
+  .btn-primary.full {
+    @apply w-full;
+  }
+}

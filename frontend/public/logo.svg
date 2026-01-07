@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80" width="240" height="160">
+  <title>Dynamic Motion Logo</title>
+  <desc>An abstract, Nike-like swoosh shape implying speed and movement.</desc>
+  
+  <path d="M 10,65 C 35,85 75,70 110,10 C 85,35 50,45 10,65 Z" fill="currentColor"/>
+  
+</svg>

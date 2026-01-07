@@ -1,55 +1,89 @@
 <script setup>
-defineProps({
-  products: Array // We expect an array of shoes
+import { ref, computed, inject } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+
+const products = inject('products');
+const router = useRouter();
+const route = useRoute();
+
+const viewDetails = (product) => {
+  router.push({ name: 'details', params: { id: product.id } });
+};
+
+// --- FILTER LOGIC ---
+const activeFilter = ref(route.query.filter || 'All');
+
+const filteredProducts = computed(() => {
+  if (activeFilter.value === 'All') return products;
+  
+  return products.filter(p => {
+    if (activeFilter.value === 'Shoes') return !['Home', 'Apparel', 'Accessories'].includes(p.category);
+    if (activeFilter.value === 'Home & Gym') return ['Home', 'Accessories', 'Training'].includes(p.category);
+    if (activeFilter.value === 'Lifestyle') return ['Lifestyle', 'Streetwear', 'Vintage', 'Apparel'].includes(p.category);
+    return true;
+  });
 });
 
-const emit = defineEmits(['view-details']);
+const setFilter = (filter) => {
+  activeFilter.value = filter;
+  router.replace({ query: { filter: filter } }); 
+};
 </script>
 
 <template>
-  <section class="page-section">
-    <div class="section-header">
-      <h2>Trending Now</h2>
-      <p>The latest drops.</p>
+  <section class="max-w-7xl mx-auto p-8 animate-[fadeIn_0.4s_ease]">
+    
+    <div class="mb-6">
+      <h2 class="text-2xl font-black mb-2">New Releases</h2>
+      <p class="text-text-muted">The latest drops in footwear and equipment.</p>
     </div>
     
-    <div class="grid">
-      <article v-for="p in products" :key="p.id" class="product-card" @click="$emit('view-details', p)">
-        <div class="img-wrapper">
-          <img :src="p.image" :alt="p.name">
-          <div class="overlay">Quick View</div>
+    <div class="flex gap-3 mb-10 overflow-x-auto pb-2 scrollbar-hide">
+      <button 
+        v-for="filter in ['All', 'Shoes', 'Home & Gym', 'Lifestyle']" 
+        :key="filter"
+        @click="setFilter(filter)"
+        class="px-5 py-2.5 rounded-full text-sm font-semibold border transition-all duration-200 whitespace-nowrap"
+        :class="activeFilter === filter 
+          ? 'bg-primary text-white border-primary' 
+          : 'bg-white border-border text-text-muted hover:border-primary hover:text-primary'"
+      >
+        {{ filter }}
+      </button>
+    </div>
+    
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-8">
+      
+      <article 
+        v-for="p in filteredProducts" 
+        :key="p.id" 
+        class="bg-surface cursor-pointer group transition-transform duration-300 hover:-translate-y-1" 
+        @click="viewDetails(p)"
+      >
+        <div class="h-[300px] bg-gray-100 relative overflow-hidden rounded-lg">
+          <img 
+            :src="p.image" 
+            :alt="p.name" 
+            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          >
+          
+          <div class="absolute bottom-0 left-0 right-0 bg-black/80 text-white p-2.5 text-center text-sm translate-y-full transition-transform duration-300 group-hover:translate-y-0">
+            Quick View
+          </div>
         </div>
-        <div class="card-details">
-          <span class="category">{{ p.category }}</span>
-          <h4>{{ p.name }}</h4>
-          <p class="price">₱{{ p.price.toLocaleString() }}</p>
+
+        <div class="py-4">
+          <span class="text-xs font-bold text-text-muted uppercase tracking-wide">{{ p.category }}</span>
+          <h4 class="font-bold text-lg mt-1 text-primary">{{ p.name }}</h4>
+          <p class="font-semibold mt-1 text-text-main">₱{{ p.price.toLocaleString() }}</p>
         </div>
       </article>
+
     </div>
+
+    <div v-if="filteredProducts.length === 0" class="text-center py-16 text-text-muted">
+      <p>No products found in this category.</p>
+    </div>
+
   </section>
 </template>
-
-<style scoped>
-.page-section { max-width: 1200px; margin: 0 auto; padding: 2rem; animation: fadeIn 0.4s ease; }
-.section-header { margin-bottom: 2rem; }
-
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2rem; }
-.product-card { background: white; cursor: pointer; transition: all 0.3s ease; }
-.product-card:hover { transform: translateY(-5px); }
-
-.img-wrapper { height: 300px; background: #f6f6f6; position: relative; overflow: hidden; }
-.img-wrapper img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; }
-
-.overlay {
-  position: absolute; bottom: 0; left: 0; right: 0; background: rgba(17,17,17,0.8);
-  color: white; padding: 10px; text-align: center; font-size: 0.85rem;
-  transform: translateY(100%); transition: transform 0.3s;
-}
-.product-card:hover .overlay { transform: translateY(0); }
-
-.card-details { padding: 1rem 0; }
-.category { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
-.price { font-weight: 600; }
-
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-</style>

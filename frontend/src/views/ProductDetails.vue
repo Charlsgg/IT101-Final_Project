@@ -1,59 +1,86 @@
 <script setup>
-defineProps({
-  product: Object
-});
+import { computed, inject } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
-const emit = defineEmits(['add-to-cart', 'go-back']);
+// 1. GET TOOLS
+const route = useRoute();    
+const router = useRouter();  
+
+// 2. INJECT DATA & ACTIONS
+const products = inject('products');
+const addToCart = inject('addToCart');
+
+// 3. FIND THE PRODUCT
+const productId = Number(route.params.id);
+const product = computed(() => products.find(p => p.id === productId));
+
+const goBack = () => {
+  router.push('/products');
+};
 </script>
 
 <template>
-  <section class="page-section details-view">
-    <button class="back-btn" @click="$emit('go-back')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M19 12H5M12 19l-7-7 7-7"/>
-      </svg>
-      Back
-    </button>
+  <section class="max-w-7xl mx-auto p-8 animate-[fadeIn_0.3s_ease]">
     
-    <div class="product-split">
-      <div class="product-image-large">
-        <img :src="product.image" class="detail-img" :alt="product.name">
-      </div>
+    <div v-if="product">
+      <button 
+        class="flex items-center gap-2 text-text-muted font-semibold mb-8 hover:text-primary transition-colors" 
+        @click="goBack"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Back to Browse
+      </button>
       
-      <div class="product-info">
-        <span class="tag">Best Seller</span>
-        <h1>{{ product.name }}</h1>
-        <h2 class="price-display">${{ product.price }}</h2>
-        <p class="description">
-          Expertly crafted for performance. Features Nike Air cushioning for all-day comfort 
-          and premium leather overlays for durability.
-        </p>
+      <div class="grid grid-cols-1 md:grid-cols-[1.5fr_1fr] gap-12 md:gap-16">
         
-        <button class="btn-primary full" @click="$emit('add-to-cart', product)">
-          Add to Cart — ${{ product.price }}
-        </button>
+        <div>
+          <img 
+            :src="product.image" 
+            class="w-full h-auto rounded-2xl shadow-xl object-cover" 
+            :alt="product.name"
+          >
+        </div>
+        
+        <div class="flex flex-col justify-center">
+          <span class="w-fit bg-primary text-white px-3 py-1 rounded-full text-xs font-bold mb-4 tracking-wide uppercase">
+            Best Seller
+          </span>
+          
+          <h1 class="text-4xl md:text-5xl font-black mb-2 tracking-tight text-primary">
+            {{ product.name }}
+          </h1>
+          
+          <h2 class="text-3xl font-medium mb-6 text-text-main">
+            ₱{{ product.price.toLocaleString() }}
+          </h2>
+          
+          <p class="text-text-muted leading-relaxed mb-10 text-lg">
+            Expertly crafted for performance. Features premium materials for durability 
+            and designed to elevate your daily routine, whether at the gym or on the street.
+          </p>
+          
+          <button class="btn-primary w-full text-lg py-4 shadow-lg hover:shadow-xl" @click="addToCart(product)">
+            Add to Cart — ₱{{ product.price.toLocaleString() }}
+          </button>
 
-        <div class="features">
-          <div class="feature">🚚 Free Shipping</div>
-          <div class="feature">↩️ 60-Day Returns</div>
+          <div class="flex gap-8 mt-10 text-sm text-text-muted font-semibold">
+            <div class="flex items-center gap-2 cursor-help" title="Free standard shipping on all orders">
+              <span>🚚</span> Free Shipping
+            </div>
+            <div class="flex items-center gap-2 cursor-help" title="Returns accepted within 60 days">
+              <span>↩️</span> 60-Day Returns
+            </div>
+          </div>
         </div>
       </div>
     </div>
+
+    <div v-else class="text-center py-24">
+      <h2 class="text-2xl font-bold mb-6 text-primary">Product not found</h2>
+      <button class="btn-secondary" @click="goBack">Go Back</button>
+    </div>
+
   </section>
 </template>
-
-<style scoped>
-.page-section { max-width: 1200px; margin: 0 auto; padding: 2rem; animation: fadeIn 0.3s ease; }
-.product-split { display: grid; grid-template-columns: 1.5fr 1fr; gap: 4rem; margin-top: 1rem; }
-.product-image-large img { width: 100%; border-radius: 12px; }
-.tag { background: #111; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
-.price-display { font-size: 2rem; margin: 0.5rem 0 1.5rem; }
-.features { margin-top: 2rem; display: flex; gap: 2rem; color: var(--text-muted); font-size: 0.9rem; }
-.back-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; font-weight: 600; }
-
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-@media (max-width: 768px) {
-  .product-split { grid-template-columns: 1fr; }
-}
-</style>

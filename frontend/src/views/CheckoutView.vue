@@ -1,13 +1,16 @@
 <script setup>
-import { reactive, computed, ref } from 'vue';
+import { reactive, computed, ref, inject } from 'vue';
+import { useRouter } from 'vue-router';
 
-const props = defineProps({
-  total: Number
-});
-
-const emit = defineEmits(['confirm-order']);
+const router = useRouter();
+const cart = inject('cart');
+const clearCart = inject('clearCart');
 
 const showConfirmModal = ref(false);
+
+const total = computed(() => {
+  return cart ? cart.reduce((sum, item) => sum + item.price, 0) : 0;
+});
 
 const form = reactive({
   email: '',
@@ -20,7 +23,6 @@ const form = reactive({
 
 const errors = reactive({});
 
-// Validation Logic
 const validate = (field) => {
   if (field === 'email') {
     const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
@@ -40,7 +42,14 @@ const validate = (field) => {
   }
 };
 
-// Input Formatters
+const isFormValid = computed(() => {
+  return form.email && !errors.email &&
+         form.name && !errors.name &&
+         form.address &&
+         form.card && !errors.card &&
+         form.cvc && !errors.cvc;
+});
+
 const formatCard = (e) => {
   let val = e.target.value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim();
   form.card = val;
@@ -59,94 +68,129 @@ const formatName = (e) => {
   validate('name');
 };
 
-const isFormValid = computed(() => {
-  return form.email && !errors.email &&
-         form.name && !errors.name &&
-         form.address &&
-         form.card && !errors.card &&
-         form.cvc && !errors.cvc;
-});
-
 const initiateCheckout = () => {
-  if (isFormValid.value) showConfirmModal.value = true;
+  if (isFormValid.value) {
+    showConfirmModal.value = true;
+  }
+};
+
+const confirmOrder = () => {
+  showConfirmModal.value = false;
+  alert("Order Placed Successfully!");
+  
+  if (clearCart) clearCart(); 
+  
+  router.push('/');
 };
 </script>
 
 <template>
-  <section class="page-section checkout-view">
-    <div class="checkout-card">
-      <div class="checkout-header">
-        <h2>Secure Checkout</h2>
-        <p>Enter your details below.</p>
+  <section class="min-h-screen flex items-center justify-center p-4 bg-bg">
+    
+    <div class="bg-surface p-8 md:p-12 rounded-2xl w-full max-w-lg shadow-xl border border-border">
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-black mb-2">Secure Checkout</h2>
+        <p class="text-text-muted">Enter your payment details below.</p>
       </div>
 
-      <form @submit.prevent="initiateCheckout">
-        <div class="form-group">
-          <label>Email Address</label>
-          <input v-model="form.email" @blur="validate('email')" type="email" placeholder="you@example.com" class="styled-input" :class="{ 'has-error': errors.email, 'is-valid': form.email && !errors.email }">
-          <span class="error-msg" v-if="errors.email">{{ errors.email }}</span>
+      <form @submit.prevent="initiateCheckout" class="space-y-5">
+        
+        <div>
+          <label class="block text-sm font-bold mb-2 ml-1">Email Address</label>
+          <input 
+            v-model="form.email" 
+            @blur="validate('email')" 
+            type="email" 
+            placeholder="you@example.com" 
+            class="w-full px-4 py-3 rounded-lg border border-border bg-gray-50 focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+            :class="{ 
+              'border-red-500 bg-red-50 text-red-900': errors.email, 
+              'border-green-500 bg-green-50 text-green-900': form.email && !errors.email 
+            }"
+          >
+          <span class="text-red-500 text-xs mt-1 block font-medium" v-if="errors.email">{{ errors.email }}</span>
         </div>
         
-        <div class="form-group">
-          <label>Full Name</label>
-          <input v-model="form.name" @input="formatName" type="text" placeholder="Jane Doe" class="styled-input" :class="{ 'has-error': errors.name, 'is-valid': form.name && !errors.name }">
-          <span class="hint" v-if="!errors.name">Numbers are not allowed.</span>
+        <div>
+          <label class="block text-sm font-bold mb-2 ml-1">Full Name</label>
+          <input 
+            v-model="form.name" 
+            @input="formatName" 
+            type="text" 
+            placeholder="Jane Doe" 
+            class="w-full px-4 py-3 rounded-lg border border-border bg-gray-50 focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+            :class="{ 
+              'border-red-500 bg-red-50 text-red-900': errors.name, 
+              'border-green-500 bg-green-50 text-green-900': form.name && !errors.name 
+            }"
+          >
+          <span class="text-text-muted text-xs mt-1 block" v-if="!errors.name">Numbers are not allowed.</span>
         </div>
 
-        <div class="form-group">
-          <label>Address</label>
-          <input v-model="form.address" type="text" class="styled-input">
+        <div>
+          <label class="block text-sm font-bold mb-2 ml-1">Address</label>
+          <input v-model="form.address" type="text" class="w-full px-4 py-3 rounded-lg border border-border bg-gray-50 focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all">
         </div>
 
-        <div class="form-group">
-          <label>Card Details</label>
-          <div class="card-input-wrapper">
-            <input :value="form.card" @input="formatCard" type="text" placeholder="0000 0000 0000 0000" maxlength="19" class="styled-input" :class="{ 'has-error': errors.card, 'is-valid': form.card && !errors.card }">
+        <div>
+          <label class="block text-sm font-bold mb-2 ml-1">Card Details</label>
+          <input 
+            :value="form.card" 
+            @input="formatCard" 
+            type="text" 
+            placeholder="0000 0000 0000 0000" 
+            maxlength="19" 
+            class="w-full px-4 py-3 rounded-lg border border-border bg-gray-50 focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+            :class="{ 
+              'border-red-500 bg-red-50 text-red-900': errors.card, 
+              'border-green-500 bg-green-50 text-green-900': form.card && !errors.card 
+            }"
+          >
+          <span class="text-red-500 text-xs mt-1 block font-medium" v-if="errors.card">{{ errors.card }}</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-bold mb-2 ml-1">Expiry</label>
+            <input v-model="form.expiry" type="text" placeholder="MM/YY" maxlength="5" class="w-full px-4 py-3 rounded-lg border border-border bg-gray-50 focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all">
           </div>
-          <span class="error-msg" v-if="errors.card">{{ errors.card }}</span>
+          <div>
+            <label class="block text-sm font-bold mb-2 ml-1">CVC</label>
+            <input 
+              :value="form.cvc" 
+              @input="formatCVC" 
+              type="text" 
+              placeholder="123" 
+              class="w-full px-4 py-3 rounded-lg border border-border bg-gray-50 focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+              :class="{ 
+                'border-red-500 bg-red-50 text-red-900': errors.cvc, 
+                'border-green-500 bg-green-50 text-green-900': form.cvc && !errors.cvc 
+              }"
+            >
+          </div>
         </div>
 
-        <div class="grid-2">
-          <div class="form-group">
-            <label>Expiry</label>
-            <input v-model="form.expiry" type="text" placeholder="MM/YY" class="styled-input" maxlength="5">
-          </div>
-          <div class="form-group">
-            <label>CVC</label>
-            <input :value="form.cvc" @input="formatCVC" type="text" placeholder="123" class="styled-input" :class="{ 'has-error': errors.cvc, 'is-valid': form.cvc && !errors.cvc }">
-          </div>
-        </div>
-
-        <button type="submit" class="btn-primary full mt-4" :disabled="!isFormValid">
-          {{ isFormValid ? `Pay $${total}` : 'Complete Form to Pay' }}
+        <button 
+          type="submit" 
+          class="btn-primary w-full mt-6 text-lg py-4 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none" 
+          :disabled="!isFormValid"
+        >
+          {{ isFormValid ? `Pay ₱${total.toLocaleString()}` : 'Complete Form to Pay' }}
         </button>
       </form>
     </div>
 
-    <div v-if="showConfirmModal" class="modal-overlay">
-      <div class="modal">
-        <h3>Confirm Order</h3>
-        <p>You are about to pay <b>${{ total }}</b>. Is this correct?</p>
-        <div class="modal-actions">
+    <div v-if="showConfirmModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[2000] p-4">
+      <div class="bg-surface p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl animate-[fadeIn_0.2s_ease-out]">
+        <h3 class="text-2xl font-black mb-4">Confirm Order</h3>
+        <p class="text-text-muted mb-8">You are about to pay <b class="text-primary">₱{{ total.toLocaleString() }}</b>. Is this correct?</p>
+        
+        <div class="flex gap-4 justify-center">
           <button class="btn-secondary" @click="showConfirmModal = false">Cancel</button>
-          <button class="btn-primary" @click="$emit('confirm-order')">Yes, Pay Now</button>
+          <button class="btn-primary" @click="confirmOrder">Yes, Pay Now</button>
         </div>
       </div>
     </div>
+
   </section>
 </template>
-
-<style scoped>
-.page-section { max-width: 1200px; margin: 0 auto; padding: 2rem; display: flex; justify-content: center; }
-.checkout-card { background: white; padding: 3rem; border-radius: 16px; width: 100%; max-width: 550px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-.form-group { margin-bottom: 1.5rem; }
-.styled-input { width: 100%; padding: 0.85rem; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 1rem; }
-.styled-input.has-error { border-color: #ef4444; background: #fff5f5; }
-.styled-input.is-valid { border-color: #10b981; background: #f0fdf4; }
-.error-msg { color: #ef4444; font-size: 0.8rem; margin-top: 4px; display: block; }
-.hint { color: #757575; font-size: 0.8rem; margin-top: 4px; display: block; }
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000; }
-.modal { background: white; padding: 2rem; border-radius: 12px; max-width: 400px; text-align: center; }
-.modal-actions { display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: center; }
-</style>
